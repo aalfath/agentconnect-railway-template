@@ -10,3 +10,4 @@ from Railway's "update available" notice.
   generated login, Railway Postgres 18.
 - Measured on Railway at 0.5 GB / 1 vCPU per service: Control Plane about
   250 MB, Relay and Web about 85 MB each, Gateway about 15 MB.
+- Deploy on Railway button in the README.

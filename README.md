@@ -1,3 +1,5 @@
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/new/template/agentconnect?utm_medium=integration&utm_source=button&utm_campaign=agentconnect)
+
 # AgentConnect on Railway
 
 One-click Railway template for [AgentConnect](https://github.com/agentconnect-md/agentconnect)
