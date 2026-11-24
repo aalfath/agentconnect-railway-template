@@ -1,0 +1,68 @@
+# AgentConnect public gateway (Railway).
+#
+# Without an OIDC provider, AgentConnect's API treats every request as the
+# owner, so nothing reaches the console or API without the deployment's login.
+# Exempt are only paths that carry and verify their own credentials:
+#   /relay/*         relay sockets, webhooks and chat-platform events (tokens, HMAC)
+#   /cp/daemon/ws    daemon WebSocket (API key in its auth frame)
+#   "Bearer <key>"   personal or daemon API keys with no dot, which the API checks
+#                    as keys and rejects with 401 when invalid
+#   agent/org icons  public PNGs that Slack and other chat apps fetch
+{
+	admin off
+	auto_https off
+	persist_config off
+	servers {
+		trusted_proxies static 100.64.0.0/10 152.233.0.0/16 10.0.0.0/8 fd00::/8
+		client_ip_headers X-Forwarded-For
+	}
+}
+
+:{$PORT} {
+	encode zstd gzip
+
+	handle /healthz {
+		respond "ok" 200
+	}
+
+	handle_path /relay/* {
+		reverse_proxy {$RELAY_UPSTREAM}
+	}
+
+	@cp_open {
+		method GET HEAD
+		path_regexp ^/cp/(api/)?v1/(agents|orgs)/[^/]+/icon$
+	}
+	@cp_daemon path /cp/daemon/ws
+	@cp_key {
+		path /cp/*
+		header_regexp Authorization ^Bearer [^.\s]+$
+	}
+	handle @cp_daemon {
+		uri strip_prefix /cp
+		reverse_proxy {$CP_UPSTREAM}
+	}
+	handle @cp_open {
+		uri strip_prefix /cp
+		reverse_proxy {$CP_UPSTREAM}
+	}
+	handle @cp_key {
+		uri strip_prefix /cp
+		reverse_proxy {$CP_UPSTREAM}
+	}
+
+	handle {
+		basic_auth {
+			{$AGENTCONNECT_USERNAME} {$AGENTCONNECT_PASSWORD_HASH}
+		}
+		# The login header has done its job here; never pass it upstream.
+		request_header -Authorization
+
+		handle_path /cp/* {
+			reverse_proxy {$CP_UPSTREAM}
+		}
+		handle {
+			reverse_proxy {$WEB_UPSTREAM}
+		}
+	}
+}
