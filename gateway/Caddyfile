@@ -36,7 +36,7 @@
 	@cp_daemon path /cp/daemon/ws
 	@cp_key {
 		path /cp/*
-		header_regexp Authorization ^Bearer [^.\s]+$
+		header_regexp apikey Authorization "^Bearer [^.[:space:]]+$"
 	}
 	handle @cp_daemon {
 		uri strip_prefix /cp
